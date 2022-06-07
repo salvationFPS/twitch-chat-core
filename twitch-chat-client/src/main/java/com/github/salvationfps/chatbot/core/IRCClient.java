@@ -1,7 +1,8 @@
 package com.github.salvationfps.chatbot.core;
 
 import com.github.salvationfps.chatbot.core.parsers.MessageParser;
-import com.github.salvationfps.chatbot.core.utils.MessageFormatter;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -11,25 +12,38 @@ import java.net.Socket;
 
 import static com.github.salvationfps.chatbot.core.utils.StringConstants.MESSAGE_END;
 
+@Slf4j
 public class IRCClient {
 
-    private Socket socket;
-    private BufferedReader in;
-    private BufferedWriter out;
-    private MessageParser messageParser = new MessageParser();
+    private static final String TOKEN_PREFIX = "PASS ";
+    private static final String NAME_PREFIX = "NICK ";
+    private static final String JOINING_CHANNEL_NAME_PREFIX = "JOIN # ";
+    private static final String CAPABILITIES_PREFIX = "CAP REQ :twitch.tv/commands twitch.tv/tags";
+    private static final String PRIVATE_MESSAGE_PREFIX = "PRIVMSG #";
 
-    public IRCClient(String host, int port) throws Exception{
-        this.socket = new Socket(host, port);
+    private final String name;
+    private final String oauthToken;
+    private final BufferedReader in;
+    private final BufferedWriter out;
+    private final MessageParser messageParser = new MessageParser();
+    private String channel;
+
+    @SneakyThrows
+    public IRCClient(String host, int port, String name, String oauthToken) {
+        this.name = name;
+        this.oauthToken = oauthToken;
+        final var socket = new Socket(host, port);
         socket.setKeepAlive(true);
         this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         this.out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
     }
 
-    public void connect(String nick, String token, String channel) throws Exception{
-        sendMessage("PASS " + token);
-        sendMessage("NICK " + nick);
-        sendMessage("JOIN #" + channel);
-        sendMessage("CAP REQ :twitch.tv/commands twitch.tv/tags" + MESSAGE_END);
+    public void connect(String channel) throws Exception{
+        this.channel = channel;
+        sendMessage(TOKEN_PREFIX + oauthToken);
+        sendMessage(NAME_PREFIX + name);
+        sendMessage(JOINING_CHANNEL_NAME_PREFIX + channel);
+        sendMessage(CAPABILITIES_PREFIX + MESSAGE_END);
         boolean previousCR = false;
         var sb = new StringBuilder();
         String receivedLine = null;
@@ -56,10 +70,6 @@ public class IRCClient {
                 }
                 System.out.println(receivedLine);
                 var msg = messageParser.parseMessage(receivedLine);
-                if (msg != null){
-                    Thread.sleep(1000);
-                    sendPrivMessage(MessageFormatter.format(msg));
-                }
                 if (receivedLine.contains("PING")){
                     sendMessage("PONG");
                 }
@@ -68,21 +78,14 @@ public class IRCClient {
     }
 
     private void sendMessage(String text) throws Exception{
-        printRequestMessage(text);
+        log.debug("Outbound message: " + text);
         out.write(text + MESSAGE_END);
         out.flush();
     }
 
     private void sendPrivMessage(String text) throws Exception{
-        printRequestMessage(text);
-        out.write("PRIVMSG #salvationfps :" + text + MESSAGE_END);
+        log.debug("Outbound message: " + text);
+        out.write(PRIVATE_MESSAGE_PREFIX + channel + " :" + text + MESSAGE_END);
         out.flush();
-    }
-
-    private void printRequestMessage(String text){
-        if (text.startsWith("PASS")){
-            return;
-        }
-        System.out.println(text);
     }
 }

@@ -2,7 +2,6 @@ package com.github.salvationfps.chatbot.core.domain;
 
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
 
 import java.util.List;
 

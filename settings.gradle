@@ -1,1 +1,5 @@
-rootProject.name = 'twitch-chat-core'
+rootProject.name = 'twitch-chat-client'
+
+include 'twitch-chat-client'
+include 'twitch-chat-client-spring-boot-autoconfigure'
+include 'twitch-chat-client-spring-boot-starter'

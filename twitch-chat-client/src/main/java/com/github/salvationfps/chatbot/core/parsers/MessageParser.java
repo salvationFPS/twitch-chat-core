@@ -15,33 +15,27 @@ import java.util.stream.Collectors;
 import static com.github.salvationfps.chatbot.core.utils.Badges.BROADCASTER;
 import static com.github.salvationfps.chatbot.core.utils.StringConstants.COMMA_SEPARATOR;
 import static com.github.salvationfps.chatbot.core.utils.StringConstants.SLASH_SEPARATOR;
-import static com.github.salvationfps.chatbot.core.utils.Tags.BADGES;
-import static com.github.salvationfps.chatbot.core.utils.Tags.COLOR;
-import static com.github.salvationfps.chatbot.core.utils.Tags.DISPLAY_NAME;
-import static com.github.salvationfps.chatbot.core.utils.Tags.MODERATOR;
-import static com.github.salvationfps.chatbot.core.utils.Tags.SUBSCRIBER;
-import static com.github.salvationfps.chatbot.core.utils.Tags.SUBSCRIPTION_INFO;
-import static com.github.salvationfps.chatbot.core.utils.Tags.TURBO;
+import static com.github.salvationfps.chatbot.core.utils.Tags.*;
 
 public class MessageParser {
 
     private static final Pattern PRIV_MSG_PATTERN = Pattern.compile(":\\w+!\\w+@\\w+.tmi.twitch.tv PRIVMSG");
 
     public Message parseMessage(String message){
-        var matcher = PRIV_MSG_PATTERN.matcher(message);
+        final var matcher = PRIV_MSG_PATTERN.matcher(message);
         if (matcher.find()){
-            var tagsPart = message.substring(1, matcher.start() -1);
-            var messagePart = message.substring(matcher.end());
-            var tags = parseMessageTags(tagsPart);
-            var badges = parseBadges(tags.get(BADGES));
-            var subInfo = parseBadgeInfo(tags.get(SUBSCRIPTION_INFO));
-            var messageSplit = messagePart.split(" :");
-            var displayName = tags.get(DISPLAY_NAME);
-            var color = tags.get(COLOR);
-            var isModerator = Boolean.parseBoolean(tags.get(MODERATOR));
-            var isSubscriber = Boolean.parseBoolean(tags.get(SUBSCRIBER));
-            var isBroadcaster = badges.stream().anyMatch(b -> BROADCASTER.equals(b.getName()));
-            var isTurbo = Boolean.parseBoolean(tags.get(TURBO));
+            final var tagsPart = message.substring(1, matcher.start() -1);
+            final var messagePart = message.substring(matcher.end());
+            final var tags = parseMessageTags(tagsPart);
+            final var badges = parseBadges(tags.get(BADGES));
+            final var subInfo = parseBadgeInfo(tags.get(SUBSCRIPTION_INFO));
+            final var messageSplit = messagePart.split(" :");
+            final var displayName = tags.get(DISPLAY_NAME);
+            final var color = tags.get(COLOR);
+            final var isModerator = Boolean.parseBoolean(tags.get(MODERATOR));
+            final var isSubscriber = Boolean.parseBoolean(tags.get(SUBSCRIBER));
+            final var isBroadcaster = badges.stream().anyMatch(b -> BROADCASTER.equals(b.getName()));
+            final var isTurbo = Boolean.parseBoolean(tags.get(TURBO));
             return Message.builder()
                     .from(Chatter.builder()
                             .name(messageSplit[0].substring(2))
@@ -58,7 +52,7 @@ public class MessageParser {
                     .build();
         }
         return null;
-    };
+    }
 
     private Map<String, String> parseMessageTags(String tags){
         return Arrays.stream(tags.split(";"))
